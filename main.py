@@ -111,17 +111,17 @@ def get_scrap_records(file_id: int, db: Session = Depends(get_db)):
     return records
 
 
-@app.get("/download/{file_id}", response_class=FileResponse)
-def download_file(file_id: int, db: Session = Depends(get_db)):
-    record = db.query(FileRecord).filter(FileRecord.id == file_id).first()
-    if not record:
-        raise HTTPException(status_code=404, detail="File not found")
+# @app.get("/download/{file_id}", response_class=FileResponse)
+# def download_file(file_id: int, db: Session = Depends(get_db)):
+#     record = db.query(FileRecord).filter(FileRecord.id == file_id).first()
+#     if not record:
+#         raise HTTPException(status_code=404, detail="File not found")
 
-    file_path = os.path.join(UPLOAD_DIR, record.input_filename)
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="File missing on server")
+#     file_path = os.path.join(UPLOAD_DIR, record.input_filename)
+#     if not os.path.exists(file_path):
+#         raise HTTPException(status_code=404, detail="File missing on server")
 
-    return FileResponse(file_path, filename=record.input_filename)
+#     return FileResponse(file_path, filename=record.input_filename)
 
 
 @app.get("/files/")
@@ -137,17 +137,17 @@ def list_files(db: Session = Depends(get_db)):
         for f in files
     ]
 
-@app.get("/download/output/{file_id}")
-def download_output(file_id: int, db: Session = Depends(get_db)):
-    record = db.query(FileRecord).filter(FileRecord.id == file_id).first()
-    if not record or not record.output_filename:
-        raise HTTPException(status_code=404, detail="Output file not found")
+# @app.get("/download/output/{file_id}")
+# def download_output(file_id: int, db: Session = Depends(get_db)):
+#     record = db.query(FileRecord).filter(FileRecord.id == file_id).first()
+#     if not record or not record.output_filename:
+#         raise HTTPException(status_code=404, detail="Output file not found")
 
-    file_path = os.path.join(UPLOAD_DIR, record.output_filename)
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Output file missing on server")
+#     file_path = os.path.join(UPLOAD_DIR, record.output_filename)
+#     if not os.path.exists(file_path):
+#         raise HTTPException(status_code=404, detail="Output file missing on server")
 
-    return FileResponse(file_path, filename=record.output_filename)
+#     return FileResponse(file_path, filename=record.output_filename)
 
 
 @app.get("/files/output/")
@@ -167,3 +167,48 @@ def list_output_files(db: Session = Depends(get_db)):
         }
         for f in files
     ]
+
+
+EXCEL_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+@app.get("/download/{file_id}")
+def download_file(file_id: int, db: Session = Depends(get_db)):
+    record = db.query(FileRecord).filter(FileRecord.id == file_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    file_path = os.path.join(UPLOAD_DIR, record.input_filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File missing on server")
+
+    # Detect file type (fallback to Excel if .xlsx)
+    mime_type, _ = mimetypes.guess_type(file_path)
+    if file_path.endswith(".xlsx"):
+        mime_type = EXCEL_MIME
+
+    return FileResponse(
+        path=file_path,
+        media_type=mime_type,
+        filename=record.input_filename
+    )
+
+
+@app.get("/download/output/{file_id}")
+def download_output(file_id: int, db: Session = Depends(get_db)):
+    record = db.query(FileRecord).filter(FileRecord.id == file_id).first()
+    if not record or not record.output_filename:
+        raise HTTPException(status_code=404, detail="Output file not found")
+
+    file_path = os.path.join(UPLOAD_DIR, record.output_filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Output file missing on server")
+
+    mime_type, _ = mimetypes.guess_type(file_path)
+    if file_path.endswith(".xlsx"):
+        mime_type = EXCEL_MIME
+
+    return FileResponse(
+        path=file_path,
+        media_type=mime_type,
+        filename=record.output_filename
+    )
