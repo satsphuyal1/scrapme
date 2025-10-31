@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from db import engine, SessionLocal, Base
 from models import FileRecord, ScrapeRecord
 from fastapi.middleware.cors import CORSMiddleware
+import mimetypes   # <-- Add this line
 
 
 # Create DB tables
